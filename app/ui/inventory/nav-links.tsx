@@ -12,6 +12,7 @@ const navLinks = [
     {name: 'Main Office', href: '/inventory/main-office', icon: DocumentDuplicateIcon},
     {name: 'Hospice House', href: '/inventory/hospice-house', icon: DocumentDuplicateIcon},
     {name: 'Hospice Overflow', href: '/inventory/hospice-overflow', icon: DocumentDuplicateIcon},
+    {name: 'User Management', href:'/inventory/user-management', icon: DocumentDuplicateIcon}
 ];
 
 export default function NavLinks() {
