@@ -17,3 +17,8 @@ export type UserTable = {
     last_successful_login?: Date;
     last_unsuccessful_login?: Date;
 }
+
+export type SessionPayload = {
+    userId: string
+    expiresAt: Date
+  }

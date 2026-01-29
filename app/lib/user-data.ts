@@ -1,6 +1,9 @@
 'use server'
 import sql from 'mssql';
 import {UserTable} from './definitions';
+import { mockUsers } from '@/app/lib/mockUsers';
+
+const users = mockUsers
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -15,6 +18,10 @@ const sqlConfig: sql.config = {
     password: requireEnv('DB_PASSWORD'),
     database: requireEnv('DB_DATABASE'),
     server: requireEnv('DB_SERVER'),
+    options: {
+        encrypt: true, 
+        trustServerCertificate: true  
+    }
 };
 
 // Fetch all users- I dont imagine we will need pagination since there wont be many users but I can add it if you want
@@ -89,76 +96,4 @@ export async function searchUsers(searchQuery: string): Promise<UserTable[]> {
         throw new Error('Failed to search users.');
     }
 }
-// Create new user
-export async function createUser(userData: Omit<UserTable, 'user_id'>) {
-    try {
-        const pool = await sql.connect(sqlConfig);
-        const request = pool.request();
-        
-        request.input('username', sql.VarChar, userData.username);
-        request.input('password', sql.VarChar, userData.password); // will be hashed
-        request.input('email', sql.VarChar, userData.email);
-        request.input('created_at', sql.Date, userData.created_at);
-    
-     
-        
-        const result = await request.query(`
-            INSERT INTO Users (username, password, created_on, email)
-            VALUES (@username, @password, @created_on, @email)
-        `);
-        
-        return result;
-    } catch (error) {
-        console.error('Database Error:', error);
-        throw new Error('Failed to create user.');
-    }
-}
 
-// Update user via last name or first name
-export async function updateUser(username: String, email: String, userData: Partial<Omit<UserTable, 'user_id'>>) {
-    try {
-        const pool = await sql.connect(sqlConfig);
-        const request = pool.request();
-        
-        request.input('username', sql.VarChar, username);
-        request.input('email', sql.VarChar, email)
-
-        const updates: string[] = [];
-        
-        if (userData.username !== undefined) {
-            request.input('username', sql.VarChar, userData.username);
-            updates.push('username = @username');
-        }
-        if (userData.password !== undefined) {
-            request.input('password', sql.VarChar, userData.password);
-            updates.push('password = @password');
-        }
-        if (userData.email !== undefined) {
-            request.input('email', sql.VarChar, userData.email);
-            updates.push('email = @email');
-        }
-        
-        if (updates.length === 0) {
-            throw new Error('No fields to update');
-        }
-        
-        const result = await request.query(`
-            UPDATE Users 
-            SET ${updates.join(', ')}
-            WHERE username = @Username
-            OR
-            WHERE email = @email
-        `);
-        
-        return result;
-    } catch (error) {
-        console.error('Database Error:', error);
-        throw new Error('Failed to update user.');
-    }
-}
-export async function Login(username: String, password: String){
-
-}
-// Delete user //reconfig to work with button
-
-// Login function (verify username and password) needs to be added with hashing
