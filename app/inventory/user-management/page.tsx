@@ -1,52 +1,94 @@
+'use client'
+import CreateUser from '@/app/ui/inventory/create-user'
 import { fetchAllUsers } from '@/app/lib/user-data';
 import { mockUsers } from '@/app/lib/mockUsers';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { redirect } from 'next/navigation'
+import {useState, useEffect, useRef} from 'react'
+import {deleteUser, updateUser} from '@/app/actions/auth'
+import {useRouter} from 'next/navigation'
+import UpdateUser from '@/app/ui/inventory/edit-user'
+import { useActionState} from 'react'
 
-export default async function UserTable() {
-    const users = mockUsers; //await fetchAllUsers();
+
+export default function UserTable() {
+    const [showCreate, setShowCreate] = useState(false)
+    const [editingUsername, seteditingUsername] = useState<string | null>(null)
+    const [users, setUsers] = useState<any[]>([]);
+    const router = useRouter();
+    
+    useEffect(() =>{
+        async function getUsers(){
+            const users = await fetchAllUsers()
+            console.log(users)
+            setUsers(users)
+        }
+        getUsers()
+    }, [])
+
+    const formRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (editingUsername && formRef.current) {//sets view to current user being edited
+            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [editingUsername]);
+
+    function handleDelete(username: any){
+        deleteUser(username);
+        router.refresh();
+    }
+ 
+    function handleCancelEdit(){
+        seteditingUsername(null);//unsets what users being edited
+    }
 
     return (
         <div className="mt-6 flow-root">
             <div className="inline-block min-w-full align-middle">
                 <div className="rounded-lg bg-white p-2 shadow-sm md:pt-0">
-                    {/* Mobile view- probably not really needed but whatever */}
+                    {/* Mobile view */}
                     <div className="md:hidden">
-                        {users?.map((user) => (
-                            <div key={user.user_id} className="mb-2 w-full rounded-lg border border-gray-200 bg-white p-4">
-                                <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-                                    <div>
-                                        <p className="text-lg font-semibold text-gray-900">{user.username}</p>
-                                        <p className="text-sm text-gray-500">{user.email}</p>
-                                        <p className = "text-sm text-gray-500">{user.created_at}</p>
-                                    </div>
-                               
-                                </div>
-                                <div className="flex items-center justify-between pt-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">
-                                            <span className="font-medium">Name:</span> {user.username} 
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button className="rounded-md border border-gray-300 p-2 hover:bg-gray-50">
-                                            <PencilIcon className="w-4 h-4 text-gray-600" />
-                                        </button>
-                                        <button className="rounded-md border border-red-300 p-2 hover:bg-red-50">
-                                            <TrashIcon className="w-4 h-4 text-red-600" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                        <div className="flex-col grow ">
+                            {!showCreate && (
+                                <button 
+                                    className="rounded-md border bg-red-800 border-red-300 p-2 hover:bg-red-100 hover:border-red-400 transition-colors"
+                                    onClick={() => setShowCreate(true)}
+                                    id="createButton"
+                                >
+                                    <PlusCircleIcon className="w-6 h-6 text-red-600 " />
+                                    Create user
+                                </button>
+                            )}
+                            {showCreate && (
+                                <CreateUser onCancel={() => setShowCreate(false)} />
+                            )}
+                        </div>
+                        {/* mobile user cards... */}
                     </div>
 
                     {/* Desktop view */}
-                    <table className="hidden min-w-full text-gray-900 md:table">
+                    <div className="flex-col items-center grow pt-2 text-white">
+                        {!showCreate && (
+                            <button 
+                                className="flex gap-2 rounded-md bg-red-800 border hover:text-red-800 border-red-300 p-2 hover:bg-red-100 hover:border-none transition-colors"
+                                onClick={() => setShowCreate(true)}
+                                id="createButton"
+                            >
+                                <PlusCircleIcon className="w-6 h-6" />
+                                Create user
+                            </button>
+                        )}
+                        {showCreate && (
+                            <CreateUser onCancel={() => setShowCreate(false)} />
+                        )}
+                    </div>
+                    
+                    <table className="hidden mt-4 min-w-full text-gray-900 md:table">
                         <thead className="rounded-lg bg-gray-50 text-left text-sm font-normal">
                             <tr>
                                 <th className="px-4 py-5 font-semibold">Username</th>
                                 <th className="px-3 py-5 font-semibold">Email</th>
-                                <th className = "px-3 py-5 font-semibold"> Created On</th>
                                 <th className="px-3 py-5 font-semibold">Actions</th>
                             </tr>
                         </thead>
@@ -59,7 +101,7 @@ export default async function UserTable() {
                                     } hover:bg-gray-100 transition-colors`}
                                 >
                                     <td className="px-4 py-4">
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold">
                                                 {user.username[0]}
                                             </div>
@@ -68,21 +110,30 @@ export default async function UserTable() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-3 py-4 text-gray-700">{user.email}</td>
-                                    <td className="px-3 py-4 text-gray-700">{user.created_at}</td>
+                                    <td className="px-3 py-4 text-gray-700">{user.email_address}</td>
+                                    
                                     <td className="px-3 py-4">
-                                        <div className="flex gap-2">
+                                        <div className="gap-4">
+                                            {editingUsername !== user.username && (
+                                                <button 
+                                                onClick={() => seteditingUsername(user.username)}//user set to form 
+                                                    className="rounded-md border border-gray-300 p-2 hover:bg-gray-100 hover:border-gray-400 transition-colors"
+                                                    title="Edit user"
+                                                >
+                                                    <PencilIcon className="w-4 h-4 text-gray-600" />
+                                                </button>
+                                            )}
+                                            
+                                            {editingUsername === user.username && (//all this stuff is just for auto focusing the view on that user
+                                                <div ref={formRef}>
+                                                    <UpdateUser username = {user.username} email = {user.email} onCancel={handleCancelEdit} />
+                                                </div>
+                                            )}
+                                            
                                             <button 
-                                                className="rounded-md border border-gray-300 p-2 hover:bg-gray-100 hover:border-gray-400 transition-colors"
-                                                title="Edit user"
-                                                id = "updateButton"
-                                            >
-                                                <PencilIcon className="w-4 h-4 text-gray-600" />
-                                            </button>
-                                            <button 
+                                                onClick={() => handleDelete(user.username)}
                                                 className="rounded-md border border-red-300 p-2 hover:bg-red-100 hover:border-red-400 transition-colors"
                                                 title="Delete user"
-                                                id = "deleteButton"
                                             >
                                                 <TrashIcon className="w-4 h-4 text-red-600" />
                                             </button>

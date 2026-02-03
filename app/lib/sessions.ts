@@ -38,6 +38,7 @@ export async function createSession(userId: string) {//creates the session and s
     sameSite: 'lax',
     path: '/',
   })
+  
 }
 
 export async function verifySession(){

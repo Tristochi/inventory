@@ -44,19 +44,17 @@ export async function createUser(formData: FormData) {
         
         request.input('username', sql.VarChar, userData.username);
         request.input('password', sql.VarChar, hashedPassword);
-        request.input('email', sql.VarChar, userData.email);
+        request.input('email_address', sql.VarChar, userData.email);
         request.input('created_at', sql.DateTime, currentDate);
         
         const result = await request.query(`
-            INSERT INTO Users (username, password, created_on, email)
+            INSERT INTO Users (username, password, email_address, created_at)
             OUTPUT INSERTED.user_id
-            VALUES (@username, @password, @created_at, @email)
+            VALUES (@username, @password, @email_address, GETDATE())
         `);
         
         const userId = result.recordset[0].user_id;
-        
-        // Create session for the new user
-        await createSession(userId.toString());
+        console.log(userId)
         
     } catch (error) {
         console.error('Database Error:', error);
@@ -66,25 +64,24 @@ export async function createUser(formData: FormData) {
 
 // Update user via last name or first name
 export async function updateUser(formData: FormData) {
+
     try {
         const pool = await sql.connect(sqlConfig);
         const request = pool.request();
         
-        // Get the identifier (which user to update)
-        const currentUsername = formData.get('currentUsername') as string;
-        const currentEmail = formData.get('currentEmail') as string;
-        
         // Get new values to update
-        const newUsername = formData.get('username') as string;
+        const newUsername = formData.get('newUsername') as string;
         const newPassword = formData.get('password') as string;
         const newEmail = formData.get('email') as string;
-        
+        const username =  formData.get('username')
+        const currentEmail = formData.get('currentEmail')
         // Set up search parameters
-        request.input('currentUsername', sql.VarChar, currentUsername);
-        request.input('currentEmail', sql.VarChar, currentEmail);
+        request.input('username', sql.VarChar, username);
+        request.input('currentEmail', sql.VarChar, currentEmail)
 
         const updates: string[] = [];
-        
+        console.log(newUsername, newPassword, newEmail)
+
         if (newUsername) {
             request.input('newUsername', sql.VarChar, newUsername);
             updates.push('username = @newUsername');
@@ -102,14 +99,17 @@ export async function updateUser(formData: FormData) {
         if (updates.length === 0) {
             throw new Error('No fields to update');
         }
-        
+        updates.push('last_modified_date = GETDATE()');
+
         const result = await request.query(`
             UPDATE Users 
-            SET ${updates.join(', ')}
-            WHERE username = @currentUsername OR email = @currentEmail
+            SET ${updates.join(',')}
+            WHERE username = @username OR email_address = @currentEmail
         `);
         
-        return result;
+        console.log(result)
+        console.log('user updated')
+        
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to update user.');
@@ -119,6 +119,7 @@ export async function updateUser(formData: FormData) {
 export async function login(preState: any, formData: FormData){
     console.log(formData.get('username'))
     console.log(formData.get('password'))
+    const isValid = ''
     try {
         const pool = await sql.connect(sqlConfig);
         const request = pool.request();
@@ -136,24 +137,60 @@ export async function login(preState: any, formData: FormData){
             }
         }
         const isValid = await bcrypt.compare(password, user.password)
+        console.log(isValid)
 
         if(!isValid){
+            await request.query(`UPDATE Users 
+                SET last_successful_login = GETDATE()
+                WHERE username = @username 
+                `)
             return{
-                error:'Invalid credentials....'
+                success: false, error:'Invalid credentials....'
             }
         }
+        await request.query(`UPDATE Users 
+            SET last_successful_login = GETDATE()
+            WHERE username = @username 
+            `)
+        
         await createSession(user.user_id.toString())
-        redirect('/'); {/* or whatever youre setting the homepage to for logged in users */}
+        console.log('Login successful')
+        return{
+            success: true, error:'Success....'
+        }
 
     }catch(error){
         console.error('Database Error:', error);
+        
         return {
             error: 'Failed to login. Please try again.'
         };
     }
+    
+    
 }
 
 export async function logout() {
     await deleteSession();
     redirect('/login');
+}
+
+export async function deleteUser(username: any){
+    try {
+        const pool = await sql.connect(sqlConfig);
+        const request = pool.request();
+
+        request.input('username', sql.VarChar, username)
+
+        const result = await request.query(
+
+            `DELETE FROM USERS WHERE username = @username`
+        )
+        return result
+    }catch(e){
+        console.error('User not deleted:', e);
+        return{
+            errpr: 'Failed to delete user'
+        }
+    }
 }

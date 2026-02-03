@@ -1,9 +1,18 @@
 'use client'
 import { login } from '@/app/actions/auth'
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
+import { redirect } from 'next/navigation'
 
 export default function page() {
-    const [state, formAction] = useActionState(login, { error: '' })
+    const [state, formAction] = useActionState(login, {
+        success: false,
+         error: '' })
+
+    useEffect (() =>{
+        if(state.success){
+            redirect('/inventory')
+        }
+    },[state.success, redirect])
     
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">

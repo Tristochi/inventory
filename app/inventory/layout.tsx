@@ -3,7 +3,7 @@ import {verifySession} from '@/app/lib/sessions'
 import { redirect } from 'next/navigation'
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-
+//this will verify the user before showing them anything within the app need to add logout button
     const session = await verifySession()
 
     if(!session){

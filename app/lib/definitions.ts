@@ -12,7 +12,7 @@ export type UserTable = {
     username: string;
     password: string;
     created_at: String;
-    email: string;
+    email_address: string;
     last_modified_date?: Date;
     last_successful_login?: Date;
     last_unsuccessful_login?: Date;

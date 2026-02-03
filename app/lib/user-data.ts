@@ -35,12 +35,12 @@ export async function fetchAllUsers(): Promise<UserTable[]> {
                 user_id,
                 username,
                 password,
-                email
+                email_address
             FROM users
             ORDER BY user_id DESC
         `);
         
-        return result.recordset;
+        return result.recordset as UserTable[]
     } catch (error) {
         console.error('Database Error:', error);
         throw new Error('Failed to fetch users.');
