@@ -1,5 +1,5 @@
 import { fetchFilteredInventory } from '@/app/lib/data';
-import { Item, Inventory } from '@/app/lib/definitions';
+import { UpdateItem, DeleteItem } from '@/app/ui/inventory/buttons';
 
 export default async function InventoryTable({
     query,
@@ -11,7 +11,6 @@ export default async function InventoryTable({
     location: string;
 }) {
     const inventory = await fetchFilteredInventory(query, currentPage, location);
-    console.log(inventory);
     return (
         <div className="mt-6 flow-root">
             <div className="inline-block min-w-full align-middle">
@@ -23,8 +22,11 @@ export default async function InventoryTable({
                                     <div>
                                         <p>{item.item_id}</p>
                                         <p>{item.item_name}</p>
-                                        <p>{item.qty_units_on_hand}</p>
+                                        <p>{item.qty_on_hand}</p>
                                         <p>{item.unit_name}</p>
+                                    </div>
+                                    <div>
+                                        <UpdateItem id={item.item_id} location={location} />
                                     </div>
                                 </div>
                                 
@@ -45,7 +47,10 @@ export default async function InventoryTable({
                                 </th>
                                 <th scope="col" className="px-3 py-5 font-medium">
                                     Units 
-                                </th>                                
+                                </th>    
+                                <th scope="col" className="px-3 py-5 font-medium">
+                                    Edit     
+                                </th>                            
                             </tr>
                         </thead>
                         <tbody className="bg-white">
@@ -59,11 +64,16 @@ export default async function InventoryTable({
                                         <p>{item.item_name}</p>
                                     </td>   
                                     <td className="whitespace-nowrap px-3 py-3">
-                                        <p>{item.qty_units_on_hand}</p>
+                                        <p>{item.qty_on_hand}</p>
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-3">
                                         <p>{item.unit_name}</p>
-                                    </td>                                                                          
+                                    </td>   
+                                    <td className="whitespace-nowrap py-3 pl-6 pr-3">
+                                        <div className="flex justify-end gap-3">
+                                            <UpdateItem id={item.item_id} location={location} />
+                                        </div>
+                                    </td>                                                                       
                                 </tr>
                             ))}
                         </tbody>
