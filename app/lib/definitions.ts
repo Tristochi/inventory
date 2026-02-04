@@ -32,4 +32,18 @@ export type ItemForm = {
     qty_on_hand: string;
 };
 
-export type Item = z.infer<typeof Inventory>
+export type UserTable = {
+    user_id: number;
+    username: string;
+    password: string;
+    created_at: String;
+    email_address: string;
+    last_modified_date?: Date;
+    last_successful_login?: Date;
+    last_unsuccessful_login?: Date;
+}
+
+export type SessionPayload = {
+    userId: string
+    expiresAt: Date
+  }
